@@ -11,7 +11,6 @@ typedef void* GCAnyRef;  /* Opaque reference to GCRef or GCWeakRef */
 
 int _GC_size_of_ref(GCAnyRef ref);
 
-#define GC_deref(type, ref) (*((type*)ref))
 #define GC_size_of_ref(ref) _GC_size_of_ref(ref)
 
 #define GC_malloc_ref(ref, size) \
@@ -26,12 +25,5 @@ int _GC_size_of_ref(GCAnyRef ref);
 
 #define GC_cast_to_ref(weak_ref) GC_register_root(weak_ref)
 #define GC_cast_to_weak_ref(ref) GC_unregister_root(ref)
-
-#define GC_assign_ref(type, ref, value) \
-    do { \
-        if ((ref) != NULL) { \
-            GC_deref(type, ref) = (value); \
-        } \
-    } while (0)
 
 #endif /* REFERENCE_H */
