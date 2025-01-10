@@ -35,38 +35,23 @@ void foo() {
     // Perform explicit garbage collection
     GC_collect();
 
-    // Check for remaining objects
-    int remained_object_count = GC_size_of_objects();
-    if (remained_object_count > 0) {
-        printf("There are %d objects that are not collected.\n", remained_object_count);
-    } else {
-        printf("All objects are collected.\n");
-    }
-
     GC_pop_frame(); // Pop the GC frame and cleanup
 }
 
 int main() {
     // Initialize the garbage collector with custom attributes
-    GC_init(&(GCAttribute){
-        .threshold = GC_INFINTY_THRESHOLD // Disable automatic garbage collection
-    });
+    GC_init((&(GCAttribute){
+        .threshold      = GC_INFINTY_THRESHOLD, // Disable automatic garbage collection
+        .debug_level    = GC_DEBUG_INFO         // Print debug information
+    }));
 
     printf("Allocated %d frames.\n", GC_size_of_frames());
 
     // Seed the random number generator
     srand(time(NULL));
 
-    printf("--------------------------------\n");
-    printf("Allocated %d objects before foo().\n", GC_size_of_objects());
-    printf("\n");
-
     // Call the example function
     foo();
-
-    printf("\n");
-    printf("Remained %d objects after foo().\n", GC_size_of_objects());
-    printf("--------------------------------\n");
 
     // Cleanup and destroy the garbage collector
     GC_destroy();

@@ -3,7 +3,8 @@
 #include "../include/collector.h"
 
 GCAttribute __gc_default_attr = {
-    .threshold = GC_DEFAULT_THRESHOLD
+    .threshold      = GC_DEFAULT_THRESHOLD,
+    .debug_level    = GC_DEBUG_NONE
 };
 
 GCAttribute __gc_attr;
@@ -67,20 +68,41 @@ void __GC_sweep() {
         return;
     }
 
+    int collected = 0;
+
     GCObject** obj = &frame->objects;
     while (*obj != NULL) {
         if (!(*obj)->marked) {
             GCObject* unreached = *obj;
             *obj = unreached->next;
 
+            if (__gc_attr.debug_level <= GC_DEBUG_INFO) {
+                printf("[GC] Collect %Iu bytes -> %p\n", unreached->size, unreached->data);
+            }
+
             __GC_object_free(unreached);
             frame->object_count--;
+
+            collected++;
 
             continue;
         }
 
         (*obj)->marked = 0;
         obj = &(*obj)->next;
+    }
+
+    if (__gc_attr.debug_level <= GC_DEBUG_INFO) {
+        if (collected > 0) {
+            printf("[GC] Collected %d objects.\n", collected);
+        } else {
+            printf("[GC] No objects are collected.\n");
+        }
+
+        int root_count = _GC_size_of_roots();
+        if (root_count > 0) {
+            printf("[GC] Remaining %d roots.\n", root_count);
+        }
     }
 }
 
@@ -122,6 +144,10 @@ void _GC_init(GCAttribute* attr) {
 }
 
 void _GC_destroy() {
+    if (__gc_attr.debug_level <= GC_DEBUG_INFO) {
+        printf("[GC] Destroying garbage collector...\n");
+    }
+
     for (; __gc_state.frames != NULL; ) {
         _GC_pop_frame();
     }
@@ -162,6 +188,10 @@ void _GC_unregister_root(void* root) {
 }
 
 void _GC_collect() {
+    if (__gc_attr.debug_level <= GC_DEBUG_INFO) {
+        printf("[GC] Collecting garbage...\n");
+    }
+
     __GC_mark_all();
     __GC_sweep();
 }
@@ -186,6 +216,10 @@ void _GC_push_frame() {
 void _GC_pop_frame() {
     GCFrame* frame = __gc_state.frames;
     if (frame == NULL) {
+        if (__gc_attr.debug_level <= GC_DEBUG_WARNING) {
+            printf("[GC] No frame to pop.\n");
+        }
+
         return;
     }
 

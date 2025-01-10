@@ -26,8 +26,6 @@ void __GC_object_free(GCObject* obj) {
         return;
     }
 
-    printf("Collect %Iu bytes -> %p\n", obj->size, obj->data);
-
     free(obj->data);
     free(obj);
 }

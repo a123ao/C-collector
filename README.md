@@ -31,9 +31,10 @@ gcc -o my_program my_program.c path/to/collector/build/collector.a
 Initialize the garbage collector at the start of your program:
 
 ```c
-GC_init(&(GCAttribute){ 
-    .threshold = GC_INFINTY_THRESHOLD  // Set the GC threshold to infinity (disable automatic collection)
-});
+GC_init((&(GCAttribute){
+    .threshold      = GC_INFINTY_THRESHOLD, // Disable automatic garbage collection
+    .debug_level    = GC_DEBUG_INFO         // Print debug information
+}));
 ```
 
 ### Memory Allocation
@@ -55,7 +56,6 @@ GC_malloc_weak_ref(integer, sizeof(int));
 ```c
 GCRef ref;
 GC_malloc_ref(ref, sizeof(data));
-GC_assign_ref(type, ref, data);
 ```
 
 ### Memory Management
@@ -82,69 +82,60 @@ Here's a complete example demonstrating various features of the library:
 ```c
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "../include/collector.h"
 #include "../include/reference.h"
 
-// Function to generate a random string of a given length
-char* random_string(size_t length) {
-    char* string = (char*)GC_malloc(length + 1);
+// Generate a random string of specified length
+GCWeakRef(char) random_string(size_t length) {
+    GCWeakRef(char) ref;
+    GC_malloc_weak_ref(ref, length + 1); // Allocate memory for the string (with null terminator)
 
     for (size_t i = 0; i < length; i++) {
-        string[i] = 'a' + rand() % 26;
+        ref[i] = 'A' + rand() % 26; // Fill with random uppercase letters
     }
-    string[length] = '\0';
+    ref[length] = '\0'; // Null-terminate the string
 
-    return string;
+    return ref;
 }
 
-// Function to create a weak reference to a random integer in a given range
-GCWeakRef(int) random_int(int min, int max) {
-    GCWeakRef(int) integer;
-    GC_malloc_weak_ref(integer, sizeof(int));
+// Example function demonstrating garbage collector usage
+void foo() {
+    GC_push_frame(); // Push a new GC frame
 
-    *integer = min + rand() % (max - min + 1);
+    // Allocate memory for a string reference
+    GCRef(char) ref;
+    GC_malloc_ref(ref, 64); // Memory managed by GC
 
-    return integer;
+    memcpy(ref, "This reference will not be collected.", 64);
+    printf("%s\n", ref);
+
+    // Generate and print a random string
+    printf("Here's a random string: %s\n", random_string(8));
+
+    // Perform explicit garbage collection
+    GC_collect();
+
+    GC_pop_frame(); // Pop the GC frame and cleanup
 }
 
 int main() {
-    // Initialize the garbage collector
-    GC_init(&(GCAttribute){ 
-        .threshold = GC_INFINTY_THRESHOLD // Set the GC threshold to infinity (disable automatic collection)
-    });
+    // Initialize the garbage collector with custom attributes
+    GC_init((&(GCAttribute){
+        .threshold      = GC_INFINTY_THRESHOLD, // Disable automatic garbage collection
+        .debug_level    = GC_DEBUG_INFO         // Print debug information
+    }));
+
     printf("Allocated %d frames.\n", GC_size_of_frames());
 
+    // Seed the random number generator
     srand(time(NULL));
 
-    // Generate a random string
-    char* string = random_string(10);
-    printf("String: %s\n", string);
+    // Call the example function
+    foo();
 
-    // Weak reference
-    GCWeakRef(int) integer = random_int(1, 10);
-    printf("Integer: %d\n", *integer);
-
-    char *message = "I am strong reference.";
-
-    // Strong reference
-    GCRef ref;
-    GC_malloc_ref(ref, sizeof(message));
-    GC_assign_ref(char*, ref, message);
-    printf("Strong reference: %s\n", GC_deref(char*, ref));
-
-    // Explicitly collect garbage
-    GC_collect();
-
-    // Check if there are still allocated objects
-    int object_count = GC_size_of_objects();
-    if (object_count == 0) {
-        printf("No allocated objects.\n");
-    } else {
-        printf("Still remains %d allocated objects.\n", object_count);
-    }
-
-    // Cleanup
+    // Cleanup and destroy the garbage collector
     GC_destroy();
 
     return 0;

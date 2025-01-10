@@ -7,8 +7,16 @@
 #define GC_DEFAULT_THRESHOLD 8
 #define GC_INFINTY_THRESHOLD -1
 
+typedef enum GCDebugLevel {
+    GC_DEBUG_INFO = 0,
+    GC_DEBUG_WARNING,
+    GC_DEBUG_ERROR,
+    GC_DEBUG_NONE
+} GCDebugLevel;
+
 typedef struct GCAttribute {
-    int threshold;
+    int             threshold;
+    GCDebugLevel    debug_level;
 } GCAttribute;
 
 typedef struct GCState {
