@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "time.h": "c",
+        "root.h": "c",
+        "object.h": "c",
+        "collector.h": "c",
+        "frame.h": "c",
+        "stddef.h": "c",
+        "stdlib.h": "c",
+        "stdio.h": "c",
+        "reference.h": "c"
+    },
+}
