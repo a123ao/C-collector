@@ -86,45 +86,67 @@ Here's a complete example demonstrating various features of the library:
 #include "../include/collector.h"
 #include "../include/reference.h"
 
-// Function to generate a random string
+// Function to generate a random string of a given length
 char* random_string(size_t length) {
     char* string = (char*)GC_malloc(length + 1);
+
     for (size_t i = 0; i < length; i++) {
         string[i] = 'a' + rand() % 26;
     }
     string[length] = '\0';
+
     return string;
 }
 
-// Function to create a weak reference to a random integer
+// Function to create a weak reference to a random integer in a given range
 GCWeakRef(int) random_int(int min, int max) {
     GCWeakRef(int) integer;
     GC_malloc_weak_ref(integer, sizeof(int));
+
     *integer = min + rand() % (max - min + 1);
+
     return integer;
 }
 
 int main() {
-    // Initialize GC
+    // Initialize the garbage collector
     GC_init(&(GCAttribute){ 
-        .threshold = GC_INFINTY_THRESHOLD
+        .threshold = GC_INFINTY_THRESHOLD // Set the GC threshold to infinity (disable automatic collection)
     });
+    printf("Allocated %d frames.\n", GC_size_of_frames());
 
-    // Allocate and use memory
+    srand(time(NULL));
+
+    // Generate a random string
     char* string = random_string(10);
+    printf("String: %s\n", string);
+
+    // Weak reference
     GCWeakRef(int) integer = random_int(1, 10);
-    
-    // Create strong reference
+    printf("Integer: %d\n", *integer);
+
     char *message = "I am strong reference.";
-    GCRef ref; // Declare as a generic reference
+
+    // Strong reference
+    GCRef ref;
     GC_malloc_ref(ref, sizeof(message));
     GC_assign_ref(char*, ref, message);
+    printf("Strong reference: %s\n", GC_deref(char*, ref));
 
-    // Collect garbage
+    // Explicitly collect garbage
     GC_collect();
-    
+
+    // Check if there are still allocated objects
+    int object_count = GC_size_of_objects();
+    if (object_count == 0) {
+        printf("No allocated objects.\n");
+    } else {
+        printf("Still remains %d allocated objects.\n", object_count);
+    }
+
     // Cleanup
     GC_destroy();
+
     return 0;
 }
 ```

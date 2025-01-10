@@ -27,6 +27,7 @@ GCWeakRef(int) random_int(int min, int max) {
 }
 
 int main() {
+    // Initialize the garbage collector
     GC_init(&(GCAttribute){ 
         .threshold = GC_INFINTY_THRESHOLD // Set the GC threshold to infinity (disable automatic collection)
     });
@@ -34,31 +35,34 @@ int main() {
 
     srand(time(NULL));
 
-    /* Random string allocated on heap */
+    // Generate a random string
     char* string = random_string(10);
     printf("String: %s\n", string);
 
-    /* Weak reference */
+    // Weak reference
     GCWeakRef(int) integer = random_int(1, 10);
-    printf("Integer: %d\n", GC_deref(int, integer));
+    printf("Integer: %d\n", *integer);
 
-    /* Strong reference */
     char *message = "I am strong reference.";
-    GCRef ref; // Declare as a generic reference
+
+    // Strong reference
+    GCRef ref;
     GC_malloc_ref(ref, sizeof(message));
     GC_assign_ref(char*, ref, message);
     printf("Strong reference: %s\n", GC_deref(char*, ref));
 
-    /* Explicitly collect garbage */
+    // Explicitly collect garbage
     GC_collect();
 
-    /* Show how many objects are still allocated */
+    // Check if there are still allocated objects
     int object_count = GC_size_of_objects();
     if (object_count == 0) {
         printf("No allocated objects.\n");
     } else {
         printf("Still remains %d allocated objects.\n", object_count);
     }
+
+    // Cleanup
     GC_destroy();
 
     return 0;
